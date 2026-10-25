@@ -7,3 +7,15 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+reqwest.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+rand.workspace = true
+url.workspace = true
+percent-encoding.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
