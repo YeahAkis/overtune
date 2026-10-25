@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use overtune_theme::{Config, Rgba, Role, Theme, css, palette_path, resolve};
@@ -113,7 +114,7 @@ fn config_colors_override_builtin_and_palette_overrides_config() {
 fn config_loads_from_toml() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("config.toml");
-    std::fs::write(
+    fs::write(
         &path,
         "theme = \"light\"\nfollow_palette = false\npalette_file = \"/x/p.json\"\n\n[colors]\naccent = \"#123456\"\n",
     )
@@ -130,7 +131,7 @@ fn broken_or_missing_config_gives_default() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("config.toml");
     assert_eq!(Config::load(&path), Config::default());
-    std::fs::write(&path, "theme = = =").unwrap();
+    fs::write(&path, "theme = = =").unwrap();
     assert_eq!(Config::load(&path), Config::default());
     let d = Config::default();
     assert_eq!(d.theme, "dark");
@@ -170,7 +171,7 @@ fn nonexistent_wallpaper_is_dropped() {
 fn existing_wallpaper_is_kept() {
     let dir = tempfile::tempdir().unwrap();
     let img = dir.path().join("w.png");
-    std::fs::write(&img, b"x").unwrap();
+    fs::write(&img, b"x").unwrap();
     let json = format!(r#"{{"wallpaper":"{}"}}"#, img.display());
     assert_eq!(
         resolve(&Config::default(), Some(&json)).wallpaper,

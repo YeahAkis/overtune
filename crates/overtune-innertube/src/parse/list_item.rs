@@ -1,6 +1,8 @@
 use serde_json::Value;
 
-use crate::models::{AlbumItem, AlbumRef, ArtistItem, ArtistRef, PlaylistItem, SongItem};
+use crate::models::{
+    AlbumItem, AlbumRef, ArtistItem, ArtistRef, PlaylistItem, SongItem, Thumbnail,
+};
 use crate::parse::thumbnail::thumbnails;
 use crate::parse::{array, parse_duration, runs, str_at, text};
 
@@ -201,7 +203,7 @@ fn own_browse_id(renderer: &Value) -> Option<String> {
     .map(str::to_owned)
 }
 
-fn own_thumbnails(renderer: &Value) -> Vec<crate::models::Thumbnail> {
+fn own_thumbnails(renderer: &Value) -> Vec<Thumbnail> {
     renderer
         .get("thumbnail")
         .map(thumbnails)

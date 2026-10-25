@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::thread;
 use std::time::{Duration, Instant};
 
 use async_channel::Receiver;
@@ -18,14 +19,14 @@ fn collect(rx: &Receiver<Option<String>>, wait: Duration) -> Vec<Option<String>>
         while let Ok(v) = rx.try_recv() {
             out.push(v);
         }
-        std::thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(10));
     }
     out
 }
 
 fn start(path: &Path, recheck: Duration) -> Receiver<Option<String>> {
     let rx = watch(path.to_path_buf(), Duration::from_millis(100), recheck);
-    std::thread::sleep(Duration::from_millis(150));
+    thread::sleep(Duration::from_millis(150));
     rx
 }
 
@@ -35,7 +36,7 @@ fn atomic_replace_emits_new_contents_once() {
     let path = dir.path().join("palette.json");
     let rx = start(&path, Duration::from_secs(3));
     atomic_write(&path, "first");
-    std::thread::sleep(Duration::from_millis(20));
+    thread::sleep(Duration::from_millis(20));
     atomic_write(&path, "second");
     assert_eq!(
         collect(&rx, Duration::from_millis(1000)),
@@ -60,7 +61,7 @@ fn directory_created_later_is_picked_up() {
     let path = sub.join("palette.json");
     let rx = start(&path, Duration::from_millis(200));
     fs::create_dir(&sub).unwrap();
-    std::thread::sleep(Duration::from_millis(500));
+    thread::sleep(Duration::from_millis(500));
     atomic_write(&path, "late");
     let got = collect(&rx, Duration::from_millis(2000));
     assert_eq!(got.last(), Some(&Some("late".to_string())));
@@ -84,9 +85,9 @@ fn directory_removed_and_recreated_keeps_working() {
     fs::write(&path, "a").unwrap();
     let rx = start(&path, Duration::from_millis(200));
     fs::remove_dir_all(&sub).unwrap();
-    std::thread::sleep(Duration::from_millis(400));
+    thread::sleep(Duration::from_millis(400));
     fs::create_dir(&sub).unwrap();
-    std::thread::sleep(Duration::from_millis(500));
+    thread::sleep(Duration::from_millis(500));
     atomic_write(&path, "b");
     let got = collect(&rx, Duration::from_millis(2000));
     assert!(got.contains(&None));

@@ -1,6 +1,7 @@
 use std::fs;
 
 use overtune_innertube::Innertube;
+use serde_json::Value;
 
 fn save(name: &str, value: &serde_json::Value) {
     let path = format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"));
@@ -74,9 +75,9 @@ async fn record_search() {
     );
 }
 
-fn find_continuation(v: &serde_json::Value) -> Option<String> {
+fn find_continuation(v: &Value) -> Option<String> {
     match v {
-        serde_json::Value::Object(m) => {
+        Value::Object(m) => {
             if let Some(c) = m
                 .get("nextContinuationData")
                 .and_then(|n| n.get("continuation"))
@@ -93,7 +94,7 @@ fn find_continuation(v: &serde_json::Value) -> Option<String> {
             }
             m.values().find_map(find_continuation)
         }
-        serde_json::Value::Array(a) => a.iter().find_map(find_continuation),
+        Value::Array(a) => a.iter().find_map(find_continuation),
         _ => None,
     }
 }
