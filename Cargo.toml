@@ -1,0 +1,46 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/YeahAkis/overtune"
+rust-version = "1.89"
+
+[workspace.dependencies]
+overtune-theme = { path = "crates/overtune-theme" }
+overtune-innertube = { path = "crates/overtune-innertube" }
+overtune-library = { path = "crates/overtune-library" }
+overtune-player = { path = "crates/overtune-player" }
+
+gtk = { package = "gtk4", version = "0.11", features = ["v4_14"] }
+glib = "0.22"
+gio = "0.22"
+gst = { package = "gstreamer", version = "0.25" }
+gst-audio = { package = "gstreamer-audio", version = "0.25" }
+glib-build-tools = "0.22"
+reqwest = { version = "0.13", features = ["json", "gzip", "brotli", "query"] }
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "process", "time", "sync", "fs"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "1.1"
+rusqlite = { version = "0.41", features = ["bundled"] }
+notify = "8.2"
+async-channel = "2.5"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+thiserror = "2.0"
+tempfile = "3.27"
+rand = "0.10"
+url = "2.5"
+percent-encoding = "2.3"
+lru = "0.19"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
