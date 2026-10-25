@@ -1362,6 +1362,8 @@ dependencies = [
  "anyhow",
  "async-trait",
  "overtune-innertube",
+ "overtune-library",
+ "rand",
  "serde",
  "serde_json",
  "tokio",

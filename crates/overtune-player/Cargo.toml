@@ -8,6 +8,8 @@ rust-version.workspace = true
 
 [dependencies]
 overtune-innertube.workspace = true
+overtune-library.workspace = true
+rand.workspace = true
 async-trait.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
@@ -17,3 +19,4 @@ tracing.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+serde_json.workspace = true
