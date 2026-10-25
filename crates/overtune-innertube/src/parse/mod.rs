@@ -1,4 +1,5 @@
 pub mod list_item;
+pub mod player;
 pub mod search;
 pub mod thumbnail;
 

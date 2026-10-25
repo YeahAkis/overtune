@@ -3,6 +3,7 @@ mod context;
 mod error;
 mod models;
 pub mod parse;
+mod player;
 mod search;
 mod suggestions;
 
@@ -15,4 +16,5 @@ pub use models::{
 pub use parse::parse_duration;
 pub use parse::search::{SearchPage, SearchResults};
 pub use parse::thumbnail::{best_thumbnail, resize_thumbnail};
+pub use player::{AudioFormat, PlayerInfo, pick_format};
 pub use search::SearchKind;

@@ -83,7 +83,18 @@ impl Innertube {
         body: Map<String, Value>,
     ) -> Result<Value> {
         let visitor = self.current_visitor().await;
-        self.send(url, ctx, &visitor, body).await
+        self.send_with_query(url, ctx, &visitor, body, &[]).await
+    }
+
+    pub(crate) async fn post_with_query(
+        &self,
+        url: &str,
+        ctx: &ClientContext,
+        body: Map<String, Value>,
+        query: &[(&str, &str)],
+    ) -> Result<Value> {
+        let visitor = self.current_visitor().await;
+        self.send_with_query(url, ctx, &visitor, body, query).await
     }
 
     async fn send(
@@ -91,7 +102,18 @@ impl Innertube {
         url: &str,
         ctx: &ClientContext,
         visitor: &str,
+        body: Map<String, Value>,
+    ) -> Result<Value> {
+        self.send_with_query(url, ctx, visitor, body, &[]).await
+    }
+
+    async fn send_with_query(
+        &self,
+        url: &str,
+        ctx: &ClientContext,
+        visitor: &str,
         mut body: Map<String, Value>,
+        query: &[(&str, &str)],
     ) -> Result<Value> {
         body.insert("context".into(), ctx.to_json(&self.hl, &self.gl, visitor));
         let mut headers = HeaderMap::new();
@@ -122,6 +144,7 @@ impl Innertube {
             .http
             .post(url)
             .query(&[("key", API_KEY), ("prettyPrint", "false")])
+            .query(query)
             .headers(headers)
             .json(&Value::Object(body))
             .send()

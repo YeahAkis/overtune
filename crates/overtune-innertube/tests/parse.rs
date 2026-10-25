@@ -229,3 +229,108 @@ mod search {
         assert!(list_item::song(&row).unwrap().explicit);
     }
 }
+
+mod player {
+    use std::time::{Duration, UNIX_EPOCH};
+
+    use overtune_innertube::parse::player::{player_info, url_expiry};
+    use overtune_innertube::{AudioFormat, pick_format};
+    use serde_json::json;
+
+    use super::fixture;
+
+    fn fmt(itag: u32, mime: &str, bitrate: u32) -> AudioFormat {
+        AudioFormat {
+            itag,
+            url: format!("https://x/videoplayback?itag={itag}"),
+            mime: mime.into(),
+            bitrate,
+            sample_rate: None,
+            content_length: None,
+            loudness_db: None,
+        }
+    }
+
+    #[test]
+    fn player_fixture_parses() {
+        let info = player_info(&fixture("player_visionos.json")).unwrap();
+        assert_eq!(info.video_id, "J7p4bzqLvCw");
+        assert_eq!(info.title, "Blinding Lights");
+        assert_eq!(info.duration_ms, 202_000);
+        assert!(!info.formats.is_empty());
+        assert!(info.formats.iter().all(|f| f.mime.starts_with("audio/")));
+        let opus = info.formats.iter().find(|f| f.itag == 251).unwrap();
+        assert_eq!(opus.sample_rate, Some(48_000));
+        assert_eq!(opus.content_length, Some(3_350_747));
+        assert!(info.expires_at.is_some());
+    }
+
+    #[test]
+    fn pick_prefers_251_then_140_then_bitrate() {
+        let all = vec![
+            fmt(140, "audio/mp4", 130_000),
+            fmt(251, "audio/webm", 140_000),
+            fmt(250, "audio/webm", 70_000),
+        ];
+        assert_eq!(pick_format(&all).unwrap().itag, 251);
+        assert_eq!(pick_format(&all[..1]).unwrap().itag, 140);
+        let neither = vec![
+            fmt(249, "audio/webm", 50_000),
+            fmt(250, "audio/webm", 70_000),
+        ];
+        assert_eq!(pick_format(&neither).unwrap().itag, 250);
+        assert!(pick_format(&[]).is_none());
+    }
+
+    #[test]
+    fn pick_ignores_video_formats() {
+        let all = vec![
+            fmt(18, "video/mp4", 900_000),
+            fmt(249, "audio/webm", 50_000),
+        ];
+        assert_eq!(pick_format(&all).unwrap().itag, 249);
+    }
+
+    #[test]
+    fn expiry_parsed_from_url() {
+        assert_eq!(
+            url_expiry("https://r/videoplayback?a=1&expire=1792990372&b=2"),
+            Some(UNIX_EPOCH + Duration::from_secs(1_792_990_372))
+        );
+        assert_eq!(url_expiry("https://r/videoplayback?a=1"), None);
+        assert_eq!(url_expiry("not a url"), None);
+    }
+
+    #[test]
+    fn unplayable_status_is_error() {
+        let r = json!({"playabilityStatus": {"status": "LOGIN_REQUIRED", "reason": "Sign in to confirm you're not a bot"}});
+        let err = player_info(&r).unwrap_err().to_string();
+        assert!(err.contains("not a bot"), "{err}");
+    }
+
+    #[test]
+    fn ok_status_without_urls_is_error() {
+        let r = json!({"playabilityStatus": {"status": "OK"}, "streamingData": {"adaptiveFormats": [{"itag": 251, "mimeType": "audio/webm", "signatureCipher": "s=..."}]}, "videoDetails": {"videoId": "x", "title": "t", "lengthSeconds": "10"}});
+        assert!(player_info(&r).is_err());
+    }
+}
+
+#[test]
+fn fixtures_contain_no_ip_addresses() {
+    let dir = format!("{}/tests/fixtures", env!("CARGO_MANIFEST_DIR"));
+    for entry in fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        let text = fs::read_to_string(&path).unwrap();
+        for part in text.split("&ip=").skip(1).chain(text.split("?ip=").skip(1)) {
+            let value: String = part
+                .chars()
+                .take_while(|c| c.is_ascii_hexdigit() || *c == '.' || *c == ':')
+                .collect();
+            assert!(
+                value.is_empty() || value == "0.0.0.0",
+                "{} leaks ip {value}",
+                path.display()
+            );
+        }
+    }
+}

@@ -108,3 +108,18 @@ async fn live_search_all_kinds() {
         assert!(!page.results.is_empty(), "{kind:?}");
     }
 }
+
+#[tokio::test]
+#[ignore]
+async fn live_player_returns_playable_url() {
+    let it = Innertube::new("en", "US");
+    let info = it.player("J7p4bzqLvCw").await.unwrap();
+    let format = overtune_innertube::pick_format(&info.formats).unwrap();
+    let response = reqwest::Client::new()
+        .get(&format.url)
+        .header("range", "bytes=0-1023")
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_success(), "{}", response.status());
+}

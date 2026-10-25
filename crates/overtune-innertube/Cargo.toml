@@ -19,3 +19,4 @@ percent-encoding.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+reqwest.workspace = true
