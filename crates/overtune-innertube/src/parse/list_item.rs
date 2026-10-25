@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::models::{AlbumRef, ArtistRef, SongItem};
+use crate::models::{AlbumItem, AlbumRef, ArtistItem, ArtistRef, PlaylistItem, SongItem};
 use crate::parse::thumbnail::thumbnails;
 use crate::parse::{array, parse_duration, runs, str_at, text};
 
@@ -190,5 +190,77 @@ pub fn song(renderer: &Value) -> Option<SongItem> {
             .map(thumbnails)
             .unwrap_or_default(),
         explicit: explicit(renderer),
+    })
+}
+
+fn own_browse_id(renderer: &Value) -> Option<String> {
+    str_at(
+        renderer,
+        &["navigationEndpoint", "browseEndpoint", "browseId"],
+    )
+    .map(str::to_owned)
+}
+
+fn own_thumbnails(renderer: &Value) -> Vec<crate::models::Thumbnail> {
+    renderer
+        .get("thumbnail")
+        .map(thumbnails)
+        .unwrap_or_default()
+}
+
+fn second_column_segments(renderer: &Value) -> (Vec<&Value>, Vec<String>) {
+    let column: Vec<&Value> = flex_column(renderer, 1)
+        .map(|c| runs(c).iter().collect())
+        .unwrap_or_default();
+    let segs = segments(&column)
+        .into_iter()
+        .map(|s| s.concat())
+        .filter(|s| !TYPE_LABELS.contains(&s.as_str()))
+        .collect();
+    (column, segs)
+}
+
+pub fn artist(renderer: &Value) -> Option<ArtistItem> {
+    let (_, segs) = second_column_segments(renderer);
+    Some(ArtistItem {
+        browse_id: own_browse_id(renderer)?,
+        name: text(flex_column(renderer, 0)?)?,
+        subscribers: segs.last().cloned(),
+        thumbnails: own_thumbnails(renderer),
+    })
+}
+
+pub fn album(renderer: &Value) -> Option<AlbumItem> {
+    let (column, segs) = second_column_segments(renderer);
+    let year = segs
+        .iter()
+        .rev()
+        .find(|s| s.len() == 4 && s.chars().all(|c| c.is_ascii_digit()))
+        .cloned();
+    let artist_runs: Vec<&Value> = column
+        .into_iter()
+        .filter(|r| r.get("text").and_then(Value::as_str) != year.as_deref())
+        .collect();
+    Some(AlbumItem {
+        browse_id: own_browse_id(renderer)?,
+        title: text(flex_column(renderer, 0)?)?,
+        artists: artists(&artist_runs),
+        year,
+        thumbnails: own_thumbnails(renderer),
+    })
+}
+
+pub fn playlist(renderer: &Value) -> Option<PlaylistItem> {
+    let (_, segs) = second_column_segments(renderer);
+    let song_count = segs
+        .iter()
+        .find(|s| s.ends_with(" songs") || s.ends_with(" tracks") || s.ends_with(" song"))
+        .cloned();
+    Some(PlaylistItem {
+        browse_id: own_browse_id(renderer)?,
+        title: text(flex_column(renderer, 0)?)?,
+        author: segs.first().cloned(),
+        song_count,
+        thumbnails: own_thumbnails(renderer),
     })
 }

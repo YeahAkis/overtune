@@ -3,6 +3,7 @@ mod context;
 mod error;
 mod models;
 pub mod parse;
+mod search;
 mod suggestions;
 
 pub use client::Innertube;
@@ -12,4 +13,6 @@ pub use models::{
     AlbumItem, AlbumRef, ArtistItem, ArtistRef, PlaylistItem, SongItem, Suggestions, Thumbnail,
 };
 pub use parse::parse_duration;
+pub use parse::search::{SearchPage, SearchResults};
 pub use parse::thumbnail::{best_thumbnail, resize_thumbnail};
+pub use search::SearchKind;
